@@ -83,105 +83,138 @@ Go's standard library includes the package `encoding/json` that makes working wi
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // Defining the structure of our weather data in Go is straightforward.
+// Note that the json package only encodes public fields of a struct.
+// The JSON fields are all lowercase, so we need to map the struct field
+// names to the corresponding JSON field names.
+// Luckily, [Go structs come with a string tag feature](https://golang.org/ref/spec#Struct_types).
+// This way we can tag every struct field with the corresponding JSON field name.
 type weatherData struct {
-	locationName string
-	weather      string
-	temperature  int
-	celsius      bool
-	tempForecast []int `json: temp_forecast`
-	wind         windData
+	LocationName string   `json: locationName`
+	Weather      string   `json: weather`
+	Temperature  int      `json: temperature`
+	Celsius      bool     `json: celsius`
+	TempForecast []int    `json: temp_forecast`
+	Wind         windData `json: wind`
 }
 
 type windData struct {
-	direction string
-	speed     int
+	Direction string `json: direction`
+	Speed     int    `json: speed`
 }
 
-// For encoding the Go data as JSON, we use the Marshal function from `encoding/json`.
-func encode(w weatherData) ([]byte, error) {
-	weatherJson, err := json.Marshal(w)
-	if err != nil {
-		return nil, err
-	}
-	return weatherJson, nil
-}
-
-// This wasn't too difficult, so let's try decoding JSON data.
-func decode(weatherJson []byte) (weatherData, error) {
-	// First, we need a weatherData struct to receive the decoded data.
-	w := weatherData{}
-	// Now we can pass the JSON data and a pointer to our struct to Unmashal.
-	err := json.Unmarshal(weatherJson, &w)
-	// Return the weatherData struct and any error that Unmarshal may have produced.
-	return w, err
-
-}
-
-/*
-Let's test this in a small server application.
-
-The server's tasks is simple: It shall receive JSON-encoded location data and respond with weather information.
-
-*/
-
-// The location data is just a latitude and a longitude.
-type loc struct {
-	lat int
-	lon int
-}
-
+// Let's implement a tiny server application. The client sends its location, and
+// the server responds by sending weather data.
 //
+// Location data is just a latitude and a longitude.
+type loc struct {
+	Lat float32 `json: lat`
+	Lon float32 `json: lat`
+}
+
+// For the server, we need a function for handling the request
 func weatherHandler(w http.ResponseWriter, r *http.Request) {
-	// We start by decoding the client request. The request consists of bare JSON location information,
-	// so we can decode straight away into a location structure.
-	loc, err := decode(r.Body)
+	// First, we need a location struct to receive the decoded data.
+	location := loc{}
+
+	// The location data is inside the request body which is an io.ReadCloser,
+	// but we need a byte slice for unmarshalling.
+	// ReadAll from ioutil just comes in handy.
+	jsn, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Fatal("Error reading the body", err)
+	}
+	// Now we can decode the request data using the Unmarshal function.
+	err = json.Unmarshal(jsn, &location)
 	if err != nil {
 		log.Fatal("Decoding error: ", err)
 	}
+
+	// To see if the request was correctly received, let's print it to the console.
+	log.Printf("Received: %v\n", location)
 
 	// Now it's time to prepare our response by setting up a weatherData structure.
 	// We could try fetching the data from a weather service, but for the purpose of
 	// demonstrating JSON handling, let's just use some mock-up data.
 	weather := weatherData{
-		locationName: "Zzyzx",
-		weather:      "cloudy",
-		temperature:  31,
-		celsius:      true,
-		tempForecast: []int{30, 32, 29},
-		wind: windData{
-			direction: "S",
-			speed:     20,
+		LocationName: "Zzyzx",
+		Weather:      "cloudy",
+		Temperature:  31,
+		Celsius:      true,
+		TempForecast: []int{30, 32, 29},
+		Wind: windData{
+			Direction: "S",
+			Speed:     20,
 		},
 	}
 
-	//
+	// For encoding the Go struct as JSON, we use the Marshal function from `encoding/json`.
+	weatherJson, err := json.Marshal(weather)
+	spew.Dump(weatherJson)
+	if err != nil {
+		fmt.Fprintf(w, "Error: %s", err)
+	}
+	// We send a JSON response, so we need to set the Content-Type header accordingly.
+	w.Header().Set("Content-Type", "application/json")
+
+	// Sending the response is as easy as writing to the ResponseWriter object.
+	w.Write(weatherJson)
 
 }
 
+// Thanks to Go's http package, starting the server is a piece of cake.
+func server() {
+	http.HandleFunc("/", weatherHandler)
+	http.ListenAndServe(":8080", nil)
+}
+
+// Our mock client is even simpler than the server.
+func client() {
+	// Again we create JSON by marshalling a struct; in this case a loc struct literal.
+	locJson, err := json.Marshal(loc{Lat: 35.14326, Lon: -116.104})
+	spew.Dump(locJson)
+	// Then we set up a new HTTP request for posting the JSON data to local port 8080.
+	req, err := http.NewRequest("POST", "http://localhost:8080", bytes.NewBuffer(locJson))
+	req.Header.Set("Content-Type", "application/json")
+
+	// An HTTP client will send our HTTP request to the server and collect the response.
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Finally, we print the received response and close the response body.
+	body, err := ioutil.ReadAll(resp.Body)
+	fmt.Println("Response: ", string(body))
+	resp.Body.Close()
+}
+
+// Function main calls either the client() function or the server() function,
+// depending on the first parameter on the command line.
 func main() {
-	if len(os.Args) < 2 || (os.Args(1) != "server" && os.Args(1) != "client") {
+	if len(os.Args) < 2 || (os.Args[1] != "server" && os.Args[1] != "client") {
 		fmt.Println(`Usage:
 json server
 json client
 `)
 		os.Exit(1)
 	}
-	if os.Args(1) == "server" {
-		if err := server(); err != nil {
-			log.Fatal("Server error: ", err)
-		}
+	if os.Args[1] == "server" {
+		server()
 	} else {
-		if err := client(); err != nil {
-			log.Fatal("Client error: ", err)
-		}
+		client()
 	}
 }
 
@@ -192,11 +225,34 @@ If you want to learn more about JSON, like decoding JSON data of an unknown stru
 
 https://blog.golang.org/json-and-go
 
-The transcript for this video is available here:
+The transcript for this video is available at
 
 https://appliedgo.net/json
 
+where you also can find the link to the source code as well as installation instructions.
 
 That's it for today, thanks for watching and happy coding!
 
+- - -
+
+## Getting and installing the code
+
+As always, use -d to prevent the binary from showing up in your path.
+
+First, get the code:
+
+    go get -d github.com/appliedgo/json.go
+
+Then, compile the code and start the server:
+
+    cd $GOPATH/src/github.com/appliedgo/json
+	go build
+	./json server
+
+Finally, open another shell and run the client:
+
+    cd $GOPATH/src/github.com/appliedgo/json
+	./json client
+
+You should then see the server response in the second shell.
 */
