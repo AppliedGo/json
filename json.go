@@ -21,6 +21,7 @@ author = "Christoph Berger"
 email = "chris@appliedgo.net"
 date = "2016-00-00"
 publishdate = "2016-00-00"
+draft = "true"
 domains = [""]
 tags = ["", "", ""]
 categories = ["Tutorial"]
