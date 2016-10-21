@@ -196,6 +196,8 @@ func client() {
 	}
 
 	// Finally, we print the received response and close the response body.
+	// Note we use ReadAll here for simplicity. Be careful when using ReadAll in larger
+	// projects, as reading large files can consume a lot of memory.
 	body, err := ioutil.ReadAll(resp.Body)
 	fmt.Println("Response: ", string(body))
 	resp.Body.Close()
