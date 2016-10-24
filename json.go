@@ -31,6 +31,12 @@ JSON is the *lingua franca* of exchanging data over the net and between applicat
 
 <!--more-->
 
+{{< youtube <ID> >}}
+
+- - -
+*This is the transcript of the video.*
+- - -
+
 ## What is JSON?
 
 JSON is a standard data format for exchanging data over the net and between applications. It became popular as a more readable alternative to XML, with the added benefit that Javascript code can read and write JSON data out of the box. Still, almost any other popular programming language has at least one library for handling JSON data.
@@ -53,7 +59,7 @@ In its base form, JSON data is a list of name-value entities. As an example, let
 Here we have two entries, location and weather. Both are strings. Note that the names must be enclosed in double quotes. This is not a requirement for Javascript, only for JSON.
 
 JSON knows some other data types besides strings: numbers, booleans, a null value, arrays, and objects. Let's add some of these to our weather data:
-A numeric temperature, a boolean to tell whether the temperature is measured in celsius or fahrenheit, an array with the temperature forecast for the next three days, and an object that describes the wind in terms of direction and speed.
+A numeric temperature, a boolean to tell whether the temperature is measured in celsius or fahrenheit, an array with the temperature forecast for the next three days, and an object that holds wind direction and wind speed.
 
 ```json
 {
@@ -89,9 +95,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // Defining the structure of our weather data in Go is straightforward.
@@ -131,6 +134,8 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 	// The location data is inside the request body which is an io.ReadCloser,
 	// but we need a byte slice for unmarshalling.
 	// ReadAll from ioutil just comes in handy.
+	// Note we use ReadAll here for simplicity. Be careful when using ReadAll in larger
+	// projects, as reading large files can consume a lot of memory.
 	jsn, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Fatal("Error reading the body", err)
@@ -161,7 +166,6 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 
 	// For encoding the Go struct as JSON, we use the Marshal function from `encoding/json`.
 	weatherJson, err := json.Marshal(weather)
-	spew.Dump(weatherJson)
 	if err != nil {
 		fmt.Fprintf(w, "Error: %s", err)
 	}
@@ -179,11 +183,10 @@ func server() {
 	http.ListenAndServe(":8080", nil)
 }
 
-// Our mock client is even simpler than the server.
+// Our mock client is almost as simple as the server.
 func client() {
 	// Again we create JSON by marshalling a struct; in this case a loc struct literal.
 	locJson, err := json.Marshal(loc{Lat: 35.14326, Lon: -116.104})
-	spew.Dump(locJson)
 	// Then we set up a new HTTP request for posting the JSON data to local port 8080.
 	req, err := http.NewRequest("POST", "http://localhost:8080", bytes.NewBuffer(locJson))
 	req.Header.Set("Content-Type", "application/json")
@@ -194,30 +197,18 @@ func client() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	body, err := ioutil.ReadAll(resp.Body)
 
 	// Finally, we print the received response and close the response body.
-	// Note we use ReadAll here for simplicity. Be careful when using ReadAll in larger
-	// projects, as reading large files can consume a lot of memory.
-	body, err := ioutil.ReadAll(resp.Body)
 	fmt.Println("Response: ", string(body))
 	resp.Body.Close()
 }
 
-// Function main calls either the client() function or the server() function,
-// depending on the first parameter on the command line.
+// The main function is as easy as it can get. We start the server in a goroutine
+// and then run the client.
 func main() {
-	if len(os.Args) < 2 || (os.Args[1] != "server" && os.Args[1] != "client") {
-		fmt.Println(`Usage:
-json server
-json client
-`)
-		os.Exit(1)
-	}
-	if os.Args[1] == "server" {
-		server()
-	} else {
-		client()
-	}
+	go server()
+	client()
 }
 
 /*
@@ -245,16 +236,10 @@ First, get the code:
 
     go get -d github.com/appliedgo/json.go
 
-Then, compile the code and start the server:
+Then, compile and run the code:
 
     cd $GOPATH/src/github.com/appliedgo/json
 	go build
-	./json server
+	./json
 
-Finally, open another shell and run the client:
-
-    cd $GOPATH/src/github.com/appliedgo/json
-	./json client
-
-You should then see the server response in the second shell.
 */
