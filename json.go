@@ -27,11 +27,13 @@ tags = ["JSON", "REST", "AJAX"]
 categories = ["Tutorial"]
 +++
 
-JSON is the *lingua franca* of exchanging data over the net and between applications written in different programming languages. In this article, we create tiny JSON server and client programs in Go.
+JSON is the *lingua franca* of exchanging data over the net and between applications written in different programming languages. In this article, we create a tiny JSON client/server app in Go.
 
 <!--more-->
 
-{{< youtube <ID> >}}
+{{< youtube xyoEqDlokw8 >}}
+
+(Apologies for the sound quality. I noticed too late that the mic was overmodulated.)
 
 - - -
 *This is the transcript of the video.*
@@ -98,7 +100,8 @@ import (
 )
 
 // Defining the structure of our weather data in Go is straightforward.
-// Note that the json package only encodes public fields of a struct.
+// Note that the json package only encodes struct fields that are public
+// (and hence start with an uppercase letter).
 // The JSON fields are all lowercase, so we need to map the struct field
 // names to the corresponding JSON field names.
 // Luckily, [Go structs come with a string tag feature](https://golang.org/ref/spec#Struct_types).
@@ -206,27 +209,24 @@ func client() {
 
 // The main function is as easy as it can get. We start the server in a goroutine
 // and then run the client.
+//
 func main() {
 	go server()
 	client()
 }
 
 /*
-There are a couple more things about JSON than what fits into the 5-10 minutes format of a screencast.
+A note about `func main()`: Usually, properly designed code would check if the server is ready before running the client. In this simple test scenario, this unsynchronized execution appears to work; however, in general you should not rely on this.
 
-If you want to learn more about JSON, like decoding JSON data of an unknown structure, or how to implement stream encoding or decoding, the article "JSON and Go" from the official Go blog is a great place to start:
 
-https://blog.golang.org/json-and-go
+## Tip
 
-The transcript for this video is available at
+Instead of typing the Go struct manually, have a script convert it for you. Just go to
 
-https://appliedgo.net/json
+[https://mholt.github.io/json-to-go](https://mholt.github.io/json-to-go)
 
-where you also can find the link to the source code as well as installation instructions.
+and paste the JSON data into the textbox on the left, and the page then generates a Go struct on the fly. Yay!
 
-That's it for today, thanks for watching and happy coding!
-
-- - -
 
 ## Getting and installing the code
 
@@ -236,10 +236,27 @@ First, get the code:
 
     go get -d github.com/appliedgo/json.go
 
-Then, compile and run the code:
+Then, simply run the code:
 
     cd $GOPATH/src/github.com/appliedgo/json
-	go build
-	./json
+	go run json.go
+
+
+## Final notes
+
+### Further reading
+
+There are a couple more things about JSON than what fits into the 5-10 minutes format of a screencast.
+
+If you want to learn more about JSON, like decoding JSON data of an unknown structure, or how to implement stream encoding or decoding, the article "JSON and Go" from the official Go blog is a great place to start:
+
+https://blog.golang.org/json-and-go
+
+### Zzyzx
+
+I did not make up the name "Zzyzx" that I use in the weather data. This is an existing location. Use the lat/long data from the code to find out where it is.
+
+Coincidentally, xkcd just recently [published a cartoon](https://xkcd.com/1750/) that mentions Zzyzx. I swear I did not steal the name from there; I already had it in the draft before the cartoon came out! :-)
+
 
 */
