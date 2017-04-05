@@ -262,8 +262,7 @@ Coincidentally, xkcd just recently [published a cartoon](https://xkcd.com/1750/)
 
 Errata
 
-2017-04-05:
+2017-04-05: Fixed json tag for field `Lon` (was: `json lat`)
 
-    Lon float32 `json: lon` (was: `lson: lat`)
 
 */
