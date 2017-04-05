@@ -126,7 +126,7 @@ type windData struct {
 // Location data is just a latitude and a longitude.
 type loc struct {
 	Lat float32 `json: lat`
-	Lon float32 `json: lat`
+	Lon float32 `json: lon`
 }
 
 // For the server, we need a function for handling the request
@@ -258,5 +258,12 @@ I did not make up the name "Zzyzx" that I use in the weather data. This is an ex
 
 Coincidentally, xkcd just recently [published a cartoon](https://xkcd.com/1750/) that mentions Zzyzx. I swear I did not steal the name from there; I already had it in the draft before the cartoon came out! :-)
 
+- - -
+
+Errata
+
+2017-04-05:
+
+    Lon float32 `json: lon` (was: `lson: lat`)
 
 */
