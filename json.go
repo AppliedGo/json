@@ -183,7 +183,7 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 // Thanks to Go's http package, starting the server is a piece of cake.
 func server() {
 	http.HandleFunc("/", weatherHandler)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8088", nil)
 }
 
 // Our mock client is almost as simple as the server.
@@ -191,7 +191,7 @@ func client() {
 	// Again we create JSON by marshalling a struct; in this case a loc struct literal.
 	locJson, err := json.Marshal(loc{Lat: 35.14326, Lon: -116.104})
 	// Then we set up a new HTTP request for posting the JSON data to local port 8080.
-	req, err := http.NewRequest("POST", "http://localhost:8080", bytes.NewBuffer(locJson))
+	req, err := http.NewRequest("POST", "http://localhost:8088", bytes.NewBuffer(locJson))
 	req.Header.Set("Content-Type", "application/json")
 
 	// An HTTP client will send our HTTP request to the server and collect the response.
