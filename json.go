@@ -22,9 +22,9 @@ email = "chris@appliedgo.net"
 date = "2016-10-27"
 publishdate = "2016-10-27"
 draft = "false"
-domains = ["Internet And Web"]
+categories = ["Internet And Web"]
 tags = ["JSON", "REST", "AJAX"]
-categories = ["Tutorial"]
+articletypes = ["Tutorial"]
 +++
 
 JSON is the *lingua franca* of exchanging data over the net and between applications written in different programming languages. In this article, we create a tiny JSON client/server app in Go.
