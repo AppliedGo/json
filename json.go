@@ -234,11 +234,16 @@ As always, use -d to prevent the binary from showing up in your path.
 
 First, get the code:
 
-    go get -d github.com/appliedgo/json.go
+with Go Modules:
 
-Then, simply run the code:
+	git clone https://github.com/appliedgo/json
 
-    cd $GOPATH/src/github.com/appliedgo/json
+or if you still use GOPATH:
+
+    go get -d github.com/appliedgo/json
+
+Then, simply cd into the code directory and run the code:
+
 	go run json.go
 
 
